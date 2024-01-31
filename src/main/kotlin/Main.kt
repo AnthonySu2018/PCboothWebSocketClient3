@@ -9,18 +9,19 @@ import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 fun main() {
-    app()
+    println("Author: Anthony")
+    println("Version: 2.4")
+    println("Date: 2024-01-31")
+    println("Please don't close this windows.")
+    AnthonyScript()
 
 }
 
-private fun app() {
+private fun AnthonyScript() {
     val client = HttpClient {
         install(WebSockets)
     }
-    println("Author: Anthony")
-    println("Version: 2.3")
-    println("Date: 2024-01-30")
-    println("Please don't close this windows.")
+
 
     pingFailReboot()
     println("The host can be ping. So starting to connect to the host.")
@@ -30,7 +31,7 @@ private fun app() {
 private fun connectToServer(client: HttpClient) {
     runBlocking {
         try {
-            client.webSocket(method = HttpMethod.Get, host = "192.168.10.2", port = 8080, path = "/chat") {
+            client.webSocket(method = HttpMethod.Get, host = "192.168.10.2", port = 50000, path = "/chat") {
                 println("Connected to the host.")
                 while (true) {
                     val othersMessage = incoming.receive() as? Frame.Text ?: continue
@@ -52,10 +53,12 @@ private fun connectToServer(client: HttpClient) {
             }
         } catch (_: IOException) {
             println("IOException happen. Restarting the script.")
-            app()
+            TimeUnit.SECONDS.sleep(3)
+            AnthonyScript()
         } catch (_: ClosedReceiveChannelException) {
             println("ClosedReceiveChannelException happen.Restarting the script.")
-            app()
+            TimeUnit.SECONDS.sleep(3)
+            AnthonyScript()
         }
     }
 }
