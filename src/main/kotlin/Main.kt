@@ -1,32 +1,57 @@
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
+import io.ktor.util.network.*
 import io.ktor.websocket.*
 import io.ktor.utils.io.errors.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.util.concurrent.TimeUnit
 
 fun main() {
     println("Author: Anthony")
-    println("Version: 2.4")
-    println("Date: 2024-01-31")
-    println("Please don't close this windows.")
-    AnthonyScript()
+    println("Version: 2.8")
+    println("Date: 2024-02-1")
+
+    script()
 
 }
 
-private fun AnthonyScript() {
-    val client = HttpClient {
-        install(WebSockets)
-    }
+private fun script() {
 
+    val laptop = getLaptop()
+    println("This laptop's IP address is "+laptop.ipAddress)
+    println("This laptop's MAC address is "+laptop.macAddress)
 
     pingFailReboot()
     println("The host can be ping. So starting to connect to the host.")
-    connectToServer(client)
+
+
+    while(true){
+        val client = HttpClient {
+            install(WebSockets)
+        }
+        connectToServer(client)
+        TimeUnit.SECONDS.sleep(4)
+    }
 }
+
+private fun getLaptop(): Laptop {
+    val ipAddress = InetAddress.getLocalHost().hostAddress
+    val networkInterface = NetworkInterface.getByInetAddress(InetAddress.getLocalHost())
+    val macAddressByte = networkInterface.hardwareAddress
+
+    val stringBuilder = StringBuilder()
+    for (i in macAddressByte.indices) {
+        stringBuilder.append(String.format("%02X%s", macAddressByte[i], if (i < macAddressByte.size - 1) "-" else ""))
+    }
+    val macAddress = stringBuilder.toString()
+    val laptop = Laptop(ipAddress, macAddress)
+    return laptop
+}
+
 
 private fun connectToServer(client: HttpClient) {
     runBlocking {
@@ -53,22 +78,18 @@ private fun connectToServer(client: HttpClient) {
             }
         } catch (_: IOException) {
             println("IOException happen. Restarting the script.")
-            TimeUnit.SECONDS.sleep(3)
-            AnthonyScript()
+            client.close()
         } catch (_: ClosedReceiveChannelException) {
             println("ClosedReceiveChannelException happen.Restarting the script.")
-            TimeUnit.SECONDS.sleep(3)
-            AnthonyScript()
+            client.close()
         }
     }
 }
 
-private fun pingFailReboot(ipAddress: String = "192.168.10.2",
-                            isPingSuccess: Boolean = false,
-                            falseCounter: Int  = 0) {
-
-    var isPingSuccess = isPingSuccess
-    var falseCounter = falseCounter
+private fun pingFailReboot() {
+    val ipAddress = "192.168.10.2"
+    var isPingSuccess = false
+    var falseCounter = 0
     do {
         ping(ipAddress)
         isPingSuccess = ping(ipAddress)
