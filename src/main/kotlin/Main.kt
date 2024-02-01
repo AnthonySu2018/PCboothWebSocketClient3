@@ -1,7 +1,9 @@
+
+
+
 import io.ktor.client.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
-import io.ktor.util.network.*
 import io.ktor.websocket.*
 import io.ktor.utils.io.errors.*
 import kotlinx.coroutines.*
@@ -12,11 +14,9 @@ import java.util.concurrent.TimeUnit
 
 fun main() {
     println("Author: Anthony")
-    println("Version: 2.8")
+    println("Version: 2.8.2")
     println("Date: 2024-02-1")
-
     script()
-
 }
 
 private fun script() {
@@ -28,15 +28,14 @@ private fun script() {
     pingFailReboot()
     println("The host can be ping. So starting to connect to the host.")
 
-
     while(true){
-        val client = HttpClient {
-            install(WebSockets)
-        }
-        connectToServer(client)
+        connectToServer()
         TimeUnit.SECONDS.sleep(4)
     }
 }
+
+
+
 
 private fun getLaptop(): Laptop {
     val ipAddress = InetAddress.getLocalHost().hostAddress
@@ -45,19 +44,23 @@ private fun getLaptop(): Laptop {
 
     val stringBuilder = StringBuilder()
     for (i in macAddressByte.indices) {
-        stringBuilder.append(String.format("%02X%s", macAddressByte[i], if (i < macAddressByte.size - 1) "-" else ""))
+        stringBuilder.append(String.format("%02X%s", macAddressByte[i],
+            if (i < macAddressByte.size - 1) "-" else ""))
     }
     val macAddress = stringBuilder.toString()
     val laptop = Laptop(ipAddress, macAddress)
     return laptop
 }
 
-
-private fun connectToServer(client: HttpClient) {
+private fun connectToServer() {
     runBlocking {
+        val client = HttpClient {
+            install(WebSockets)
+        }
         try {
             client.webSocket(method = HttpMethod.Get, host = "192.168.10.2", port = 50000, path = "/chat") {
                 println("Connected to the host.")
+
                 while (true) {
                     val othersMessage = incoming.receive() as? Frame.Text ?: continue
                     println(othersMessage.readText())
@@ -102,7 +105,6 @@ private fun pingFailReboot() {
         }
     } while (!isPingSuccess)
 }
-
 
 private fun shutdown() {
     try {
