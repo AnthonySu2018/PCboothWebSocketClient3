@@ -8,24 +8,25 @@ import io.ktor.websocket.*
 import io.ktor.utils.io.errors.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import java.net.ConnectException
 import java.net.InetAddress
 import java.net.NetworkInterface
 import java.util.concurrent.TimeUnit
 
 fun main() {
     println("Author: Anthony")
-    println("Version: 2.8.2")
+    println("Version: 2.8.6")
     println("Date: 2024-02-1")
     script()
 }
 
 private fun script() {
 
+    TimeUnit.SECONDS.sleep(1)
+    pingFailReboot()
     val laptop = getLaptop()
     println("This laptop's IP address is "+laptop.ipAddress)
     println("This laptop's MAC address is "+laptop.macAddress)
-
-    pingFailReboot()
     println("The host can be ping. So starting to connect to the host.")
 
     while(true){
@@ -84,6 +85,10 @@ private fun connectToServer() {
             client.close()
         } catch (_: ClosedReceiveChannelException) {
             println("ClosedReceiveChannelException happen.Restarting the script.")
+            client.close()
+        } catch (_: ConnectException) {
+            println("ConnectException happen.Restarting the script.")
+        } finally {
             client.close()
         }
     }
